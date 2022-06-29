@@ -19,7 +19,7 @@ type CacheResult struct {
 	Error error
 }
 
-var KeyNotFoundError = errors.New("Key not found")
+var KeyNotFoundError = errors.New("key not found")
 
 func NewCache(size ...int) *Cache { //make size optional
 	data := make(map[string]string)
@@ -60,7 +60,7 @@ func (c *Cache) Read(key string) *CacheResult {
 		Error: nil,
 	}
 	//update last access time
-	c.accessTime[time.Now().Unix()] = key
+	c.accessTime[time.Now().UnixNano()] = key
 
 	return r
 }
@@ -69,7 +69,7 @@ func (c *Cache) Write(key, data string) {
 	c.Lock()
 	defer c.Unlock()
 
-	timestamp := time.Now().Unix()
+	timestamp := time.Now().UnixNano()
 
 	if c.size == -1 || len(c.cache) < c.size { //we haven't reached Cache size
 		c.cache[key] = data
@@ -78,8 +78,9 @@ func (c *Cache) Write(key, data string) {
 	}
 
 	if len(c.cache) == c.size {
-		lru := c.getLeastAccessedKey(c.accessTime)
-		delete(c.cache, lru)
+		lruKey, lruTime := c.getLeastRecentlyUsedKeys(c.accessTime)
+		delete(c.cache, lruKey)
+		delete(c.accessTime, lruTime)
 	}
 
 	//set or update
@@ -94,9 +95,11 @@ func (c *Cache) lookup(key string) (v string, ok bool) {
 	return
 }
 
-//lRU check
-func (c *Cache) getLeastAccessedKey(timestampMap map[int64]string) string {
-	//return key corresponding to the earliest updated timestamp
+func (c *Cache) Size() int  {
+	return len(c.cache)
+}
+
+func (c *Cache) getLeastRecentlyUsedKeys(timestampMap map[int64]string) (string, int64) {
 	var timeEntries []int64
 	for k, _ := range timestampMap {
 		timeEntries = append(timeEntries, k)
@@ -106,5 +109,5 @@ func (c *Cache) getLeastAccessedKey(timestampMap map[int64]string) string {
 		return timeEntries[i] < timeEntries[j]
 	})
 
-	return timestampMap[timeEntries[0]]
+	return timestampMap[timeEntries[0]], timeEntries[0]
 }
