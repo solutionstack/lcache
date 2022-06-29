@@ -60,7 +60,7 @@ func TestReadCaches(t *testing.T) {
 
 }
 
-func TestWriteCaches(t *testing.T) {
+func TestCachesSizeLimiting(t *testing.T) {
 
 	type TC struct {
 		size   int
