@@ -30,7 +30,7 @@ func main() {
   lc := lcache.NewCache(20) //optional size parameter to NewCache
   lc.Write("key", "ok")
   
-  result := gc.Read("key")
+  result := lc.Read("key")
   
   if  result.Error != nil {
     panic( result.Error  )
